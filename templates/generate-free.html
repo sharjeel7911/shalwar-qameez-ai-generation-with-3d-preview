@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Free Style Generator</title>
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+		<style>
+			body {
+				font-family: "Segoe UI", sans-serif;
+				background: #fef6f0;
+			}
+			.btn-generate {
+				background-color: #d34500;
+				border: none;
+				padding: 12px 24px;
+				border-radius: 10px;
+				color: white;
+				font-weight: 600;
+			}
+			.btn-generate:hover,
+			.material-btn.active,
+			.usecase-btn.active {
+				background-color: #d34500;
+				color: white;
+			}
+			input {
+				margin-bottom: 15px;
+			}
+			.btn-select {
+				background-color: #ffe8d8;
+				color: #d34500;
+				border: none;
+				margin: 5px 5px 10px 0;
+				padding: 8px 16px;
+				border-radius: 8px;
+				font-weight: 500;
+			}
+			.btn-select:hover {
+				background-color: #ffd3b3;
+			}
+			.design-card {
+				border-radius: 12px;
+				box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+				background: white;
+				padding: 15px;
+				margin-top: 15px;
+			}
+			.design-image,
+			.position-absolute {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				border-radius: 10px;
+			}
+			.design-image {
+				object-fit: cover;
+				z-index: 1;
+			}
+			.position-absolute {
+				object-fit: contain;
+				z-index: 2;
+			}
+			.position-relative {
+				width: 100%;
+				aspect-ratio: 1 / 1;
+			}
+		</style>
+	</head>
+	<body>
+		<script>
+			const isLoggedIn = sessionStorage.getItem("isLoggedIn");
+			const userTier = sessionStorage.getItem("userTier");
+			if (isLoggedIn !== "true" || userTier !== "personal") {
+				alert("Access denied. Please log in with a Free account.");
+				window.location.href = "login.html";
+			}
+		</script>
+		<div class="container py-5">
+			<h2 class="text-center fw-bold mb-3">Free Style Generator</h2>
+
+			<div class="row justify-content-center">
+				<div class="col-md-6">
+					<input type="text" id="styleInput" class="form-control" placeholder="Enter your desired style..." />
+
+					<label class="fw-semibold mt-3">Select Material:</label><br />
+					<div id="materialOptions">
+						<button class="btn-select material-btn" onclick="selectOption('Cotton', 'material')">Cotton</button>
+						<button class="btn-select material-btn" onclick="selectOption('Lawn', 'material')">Lawn</button>
+						<button class="btn-select material-btn" onclick="selectOption('Chiffon', 'material')">Chiffon</button>
+						<button class="btn-select material-btn" onclick="selectOption('Silk', 'material')">Silk</button>
+						<button class="btn-select material-btn" onclick="selectOption('Linen', 'material')">Linen</button>
+					</div>
+
+					<label class="fw-semibold mt-3">Select Use Case:</label><br />
+					<div id="useCaseOptions">
+						<button class="btn-select usecase-btn" onclick="selectOption('Dress 1', 'useCase')">Dress 1</button>
+						<button class="btn-select usecase-btn" onclick="selectOption('Dress 2', 'useCase')">Dress 2</button>
+						<button class="btn-select usecase-btn" onclick="selectOption('Dress 3', 'useCase')">Dress 3</button>
+						<button class="btn-select usecase-btn" onclick="selectOption('Dress 4', 'useCase')">Dress 4</button>
+						<button class="btn-select usecase-btn" onclick="selectOption('Dress 5', 'useCase')">Dress 5</button>
+					</div>
+
+					<p class="text-muted small mt-2">Note: Limited access. Model selection and extra use cases available in corporate version.</p>
+
+					<button class="btn-generate w-100 mt-3" onclick="generateDesign()">Generate</button>
+				</div>
+			</div>
+
+			<div id="output" class="mt-4 row justify-content-center" style="display: none">
+				<div class="col-md-5 design-card text-center">
+					<h5>Unstitched Version</h5>
+					<div class="position-relative">
+						<img id="unstitchedImage" src="#" alt="Unstitched Design" class="design-image" />
+						<img src="/static/images/neck.png" alt="Neckline" class="position-absolute top-0 start-0 w-100 h-100" style="object-fit: contain" />
+					</div>
+				</div>
+
+				<div class="col-md-5 design-card text-center">
+					<h5>Stitched Version</h5>
+					<div class="position-relative">
+						<img id="stitchedImage" src="#" alt="Stitched Design" class="design-image" />
+						<img id="dressOverlay" src="/static/images/dress1.png" alt="Dress Overlay" class="position-absolute top-0 start-0 w-100 h-100" style="object-fit: contain" />
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div id="feedbackSection" class="design-card text-start mt-4" style="display: none">
+			<h4 style="color: #d34500">Submit Feedback</h4>
+			<p class="text-muted small">Your feedback helps improve our models. (Pattern ID: <strong id="feedbackPatternId">N/A</strong>)</p>
+
+			<div class="mb-3">
+				<label for="rating" class="form-label">Rating (1-5):</label>
+				<input type="number" id="rating" class="form-control" min="1" max="5" value="5" />
+			</div>
+
+			<div class="mb-3">
+				<label for="comment" class="form-label">Comment:</label>
+				<textarea id="comment" class="form-control" rows="3" placeholder="What did you like or dislike?"></textarea>
+			</div>
+
+			<button class="btn-generate" onclick="handleSubmitFeedback()">Submit Feedback</button>
+			<div id="feedbackMessage" class="alert mt-3" style="display: none"></div>
+		</div>
+		<script src="config.js"></script>
+		<script>
+			let selectedMaterial = "";
+			let selectedUseCase = "";
+			let selectedUseCaseIndex = 1;
+			let currentImageBlobUrl = null;
+
+			function selectOption(value, type, index) {
+				if (type === "material") {
+					selectedMaterial = value;
+					document.querySelectorAll(".material-btn").forEach((btn) => btn.classList.remove("active"));
+					event.target.classList.add("active");
+					if (currentImageBlobUrl) applyMaterialFilter(value);
+				} else if (type === "useCase") {
+					selectedUseCase = value;
+					selectedUseCaseIndex = index;
+					document.querySelectorAll(".usecase-btn").forEach((btn) => btn.classList.remove("active"));
+					event.target.classList.add("active");
+					if (currentImageBlobUrl) applyDressOverlay(index);
+				}
+			}
+
+			document.querySelectorAll("#useCaseOptions .btn-select").forEach((btn, i) => {
+				btn.onclick = (event) => selectOption(btn.textContent, "useCase", i + 1);
+			});
+			document.querySelectorAll("#materialOptions .btn-select").forEach((btn) => {
+				btn.onclick = (event) => selectOption(btn.textContent, "material", 0);
+			});
+
+			function applyMaterialFilter(material) {
+				const filterStyles = {
+					Cotton: "brightness(1.05)",
+					Lawn: "contrast(1.1)",
+					Chiffon: "opacity(0.9)",
+					Silk: "brightness(1.1) saturate(1.15)",
+					Linen: "grayscale(0.05)",
+				};
+				const filter = filterStyles[material] || "none";
+				document.getElementById("unstitchedImage").style.filter = filter;
+				document.getElementById("stitchedImage").style.filter = filter;
+			}
+
+			function applyDressOverlay(index) {
+				document.getElementById("dressOverlay").src = `/static/images/dress${index}.png`;
+			}
+
+			async function generateDesign() {
+				let currentPatternId = 12345;
+				const style = document.getElementById("styleInput").value.trim();
+				if (!style || !selectedMaterial || !selectedUseCase) {
+					alert("Please fill all fields and make a selection.");
+					return;
+				}
+
+				const outputDiv = document.getElementById("output");
+				const generateBtn = document.querySelector(".btn-generate");
+				generateBtn.disabled = true;
+				generateBtn.textContent = "Generating...";
+				outputDiv.style.display = "none";
+
+				try {
+					const fullPrompt = `${style}, ${selectedMaterial} fabric, for a ${selectedUseCase}`;
+					const response = await fetch(`${API_BASE_URL}/generate-pattern/`, {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ prompt: fullPrompt }),
+					});
+
+					if (!response.ok) {
+						const errorData = await response.json();
+						throw new Error(errorData.detail || "Server returned an error.");
+					}
+					currentPatternId = response.headers.get("X-Image-ID") || null;
+					window.currentPatternId = currentPatternId;
+					const imageBlob = await response.blob();
+					if (currentImageBlobUrl) URL.revokeObjectURL(currentImageBlobUrl);
+					currentImageBlobUrl = URL.createObjectURL(imageBlob);
+
+					document.getElementById("unstitchedImage").src = currentImageBlobUrl;
+					document.getElementById("stitchedImage").src = currentImageBlobUrl;
+					let imageId = response.headers.get("X-Image-ID");
+					if (!imageId) {
+						imageId = createIdFromPrompt(fullPrompt);
+					}
+					window.currentPatternId = imageId;
+					applyMaterialFilter(selectedMaterial);
+					applyDressOverlay(selectedUseCaseIndex);
+
+					const feedbackSection = document.getElementById("feedbackSection");
+					const feedbackPatternId = document.getElementById("feedbackPatternId");
+					feedbackPatternId.textContent = currentPatternId || "N/A";
+					document.getElementById("rating").value = 5;
+					document.getElementById("comment").value = "";
+					document.getElementById("feedbackMessage").style.display = "none";
+					feedbackSection.style.display = "block";
+
+					outputDiv.style.display = "flex";
+				} catch (error) {
+					alert(`Generation Failed: ${error.message}`);
+				} finally {
+					generateBtn.disabled = false;
+					generateBtn.textContent = "Generate";
+				}
+			}
+
+			async function handleSubmitFeedback() {
+				if (!window.currentPatternId) {
+					alert("Cannot submit feedback without a valid Pattern ID.");
+					return;
+				}
+				const rating = document.getElementById("rating").value;
+				const comment = document.getElementById("comment").value.trim();
+				const feedbackMessage = document.getElementById("feedbackMessage");
+
+				try {
+					const response = await fetch(`${API_BASE_URL}/submit-feedback/`, {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ pattern_id: window.currentPatternId, rating: parseInt(rating), comment: comment }),
+					});
+					const data = await response.json();
+					if (response.ok) {
+						feedbackMessage.className = "alert alert-success";
+						feedbackMessage.textContent = data.message || "Feedback submitted successfully!";
+					} else {
+						throw new Error(data.detail || "Failed to submit feedback.");
+					}
+				} catch (error) {
+					feedbackMessage.className = "alert alert-danger";
+					feedbackMessage.textContent = `Error: ${error.message}`;
+				}
+			}
+
+			function createIdFromPrompt(prompt) {
+				const sanitized = prompt
+					.toLowerCase()
+					.replace(/[^a-z0-9\s]/g, "")
+					.replace(/\s+/g, "-");
+				const promptPart = sanitized.split("-").slice(0, 4).join("-");
+				const timestamp = Date.now().toString().slice(-6);
+
+				return `${promptPart}-${timestamp}`;
+			}
+		</script>
+	</body>
+</html>

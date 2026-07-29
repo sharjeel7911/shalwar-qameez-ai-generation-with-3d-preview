@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>AI Fashion Generator</title>
+
+		<!-- Bootstrap -->
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+		<!-- AOS Animation Library -->
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet" />
+
+		<!-- Google Fonts -->
+		<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet" />
+		<!-- Bootstrap JS (required for modal) -->
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+		<style>
+			body {
+				background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+				font-family: "Segoe UI", sans-serif;
+				color: #222;
+			}
+
+			.navbar-brand-text {
+				font-family: "Poppins", sans-serif;
+				font-size: 1.75rem;
+				font-weight: 700;
+				color: #000;
+			}
+
+			.nav-pills .nav-link.custom-nav-btn {
+				background-color: #fb9e3a !important;
+				color: white !important;
+				border-radius: 5px;
+				margin: 2px;
+			}
+
+			.nav-pills .nav-link.custom-nav-btn:hover,
+			.nav-pills .nav-link.custom-nav-btn.active {
+				background-color: #e6521f !important;
+				color: white !important;
+			}
+
+			.float-animation {
+				animation: floatUpDown 4s ease-in-out infinite;
+			}
+
+			@keyframes floatUpDown {
+				0%,
+				100% {
+					transform: translateY(0px);
+				}
+				50% {
+					transform: translateY(-20px);
+				}
+			}
+
+			.animate-image {
+				animation: fadeIn 1.5s ease-in-out both;
+			}
+
+			@keyframes fadeIn {
+				0% {
+					opacity: 0;
+					transform: translateY(20px);
+				}
+				100% {
+					opacity: 1;
+					transform: translateY(0);
+				}
+			}
+
+			.feature-card {
+				transition:
+					transform 0.3s ease,
+					box-shadow 0.3s ease;
+			}
+
+			.feature-card:hover {
+				transform: translateY(-10px);
+				box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+			}
+
+			.cta-section {
+				background: linear-gradient(to right, #fcd29b, #ffe0cc);
+				position: relative;
+				overflow: hidden;
+				animation: backgroundShift 10s ease infinite;
+				background-size: 200% 200%;
+			}
+
+			@keyframes backgroundShift {
+				0% {
+					background-position: 0% 50%;
+				}
+				100% {
+					background-position: 100% 50%;
+				}
+			}
+
+			.cta-button {
+				background-color: #d35400;
+				color: white;
+				transition: all 0.3s ease;
+			}
+
+			.cta-button:hover {
+				transform: scale(1.05);
+				background-color: #e74c3c;
+				box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+			}
+
+			.cta-image {
+				animation: zoomInSoft 1.2s ease-out both;
+			}
+
+			@keyframes zoomInSoft {
+				0% {
+					transform: scale(0.9);
+					opacity: 0;
+				}
+				100% {
+					transform: scale(1);
+					opacity: 1;
+				}
+			}
+			.generate-wrapper {
+				position: relative;
+				display: inline-block;
+				z-index: 1000;
+			}
+
+			.generate-options {
+				position: absolute;
+				top: 105%;
+				left: 50%;
+				transform: translateX(-50%);
+				flex-direction: column;
+				gap: 0.5rem;
+				opacity: 0;
+				visibility: hidden;
+				transition:
+					opacity 0.25s ease,
+					visibility 0.25s ease;
+				width: 220px;
+				z-index: 1000;
+			}
+
+			.generate-wrapper:hover .generate-options,
+			.generate-options:hover {
+				opacity: 1;
+				visibility: visible;
+				animation: fadeInOptions 0.3s forwards;
+			}
+
+			@keyframes fadeInOptions {
+				from {
+					opacity: 0;
+					transform: translateY(-10px) translateX(-50%);
+				}
+				to {
+					opacity: 1;
+					transform: translateY(0) translateX(-50%);
+				}
+			}
+		</style>
+	</head>
+
+	<body>
+		<!-- Navbar -->
+		<header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom custom-navbar">
+			<a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-decoration-none">
+				<span class="fs-4 navbar-brand-text">AI-Fashion Generator</span>
+			</a>
+			<ul class="nav nav-pills">
+				<li class="nav-item"><a href="#" class="nav-link active custom-nav-btn">Home</a></li>
+				<li class="nav-item"><a href="#" class="nav-link custom-nav-btn">Features</a></li>
+				<li class="nav-item"><a href="#" class="nav-link custom-nav-btn">Pricing</a></li>
+				<li class="nav-item"><a href="#" class="nav-link custom-nav-btn">FAQs</a></li>
+				<li class="nav-item"><a href="#" class="nav-link custom-nav-btn">About</a></li>
+			</ul>
+		</header>
+
+		<!-- Hero Section -->
+		<div class="container py-5">
+			<div class="row align-items-center">
+				<div class="col-lg-6 pe-lg-5" data-aos="fade-right">
+					<h1 class="display-5 fw-bold lh-1 mb-4">Discover perfect look with <span style="color: darkorange">AI-powered</span> fashion styling</h1>
+					<p class="lead">Discover smart, personalized outfit ideas with our AI-powered fashion generator — where style meets simplicity.</p>
+				</div>
+				<div class="col-lg-6 animate-image" data-aos="fade-left">
+					<img src="/static/images/model.jpg" class="img-fluid rounded shadow-lg float-animation" alt="Fashion Display" />
+				</div>
+			</div>
+		</div>
+		<br /><br /><br /><br />
+		<!-- Features Section -->
+		<div class="container px-4 py-5" id="custom-cards">
+			<h1 class="pb-2 border-bottom text-center" data-aos="fade-up">Our Features</h1>
+			<div class="row row-cols-1 row-cols-lg-3 align-items-stretch g-4 py-5">
+				<div class="col feature-card" data-aos="zoom-in" data-aos-delay="100">
+					<div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(&quot;/static/images/feature-1.jpg&quot;); background-size: cover">
+						<div class="d-flex flex-column h-100 p-5 text-white">
+							<h3 class="mt-auto display-6 fw-bold"><span style="color: darkorange">AI-Generated</span> Fashion Designs</h3>
+						</div>
+					</div>
+				</div>
+				<div class="col feature-card" data-aos="zoom-in" data-aos-delay="300">
+					<div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(&quot;/static/images/feature-2.jpg&quot;); background-size: cover">
+						<div class="d-flex flex-column h-100 p-5 text-white">
+							<h3 class="mt-auto display-6 fw-bold"><span style="color: darkorange">Customize</span> Colors & Fabrics</h3>
+						</div>
+					</div>
+				</div>
+				<div class="col feature-card" data-aos="zoom-in" data-aos-delay="500">
+					<div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url(&quot;/static/images/feature-3.jpg&quot;); background-size: cover">
+						<div class="d-flex flex-column h-100 p-5 text-white">
+							<h3 class="mt-auto display-6 fw-bold">Stitched & Unstitched <span style="color: darkorange">Previews</span></h3>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<hr style="color: white; font-weight: bolder" />
+		<br />
+		<!-- Pricing Section -->
+		<div class="container py-5" id="pricing" data-aos="fade-up">
+			<div class="pricing-header p-3 pb-md-4 mx-auto text-center">
+				<h1 class="display-4 fw-bold" style="color: white">Affordable <span style="color: #d35400">Plans</span> for Every Style</h1>
+				<br />
+				<p class="fs-5 text-dark">Whether you're a casual designer or a fashion brand, our flexible pricing ensures you have access to the best AI styling tools—tailored to your needs.</p>
+			</div>
+
+			<div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
+				<div class="col" data-aos="zoom-in" data-aos-delay="100">
+					<div class="card mb-4 rounded-3 shadow-sm border-0">
+						<div class="card-header py-3" style="background-color: white">
+							<h4 class="my-0 fw text-black">Starter</h4>
+						</div>
+						<div class="card-body">
+							<h1 class="card-title pricing-card-title">$0<small class="text-muted fw-light">/mo</small></h1>
+							<ul class="list-unstyled mt-3 mb-4">
+								<li>10 outfit generations</li>
+								<li>Basic color and fabric options</li>
+								<li>Email support</li>
+								<li>Community access</li>
+							</ul>
+							<button type="button" class="w-100 btn btn-lg" style="background-color: #d35400; color: white">Try Free</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="col" data-aos="zoom-in" data-aos-delay="300">
+					<div class="card mb-4 rounded-3 shadow-sm border-0">
+						<div class="card-header py-3" style="background-color: white">
+							<h4 class="my-0 fw text-black">Pro</h4>
+						</div>
+						<div class="card-body">
+							<h1 class="card-title pricing-card-title">$15<small class="text-muted fw-light">/mo</small></h1>
+							<ul class="list-unstyled mt-3 mb-4">
+								<li>Unlimited outfit designs</li>
+								<li>Advanced customization tools</li>
+								<li>Priority email support</li>
+								<li>High-res design exports</li>
+							</ul>
+							<button type="button" class="w-100 btn btn-lg" style="background-color: #d35400; color: white">Get Started</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="col" data-aos="zoom-in" data-aos-delay="500">
+					<div class="card mb-4 rounded-3 shadow-sm border-0">
+						<div class="card-header py-3" style="background-color: #f77016">
+							<h4 class="my-0 fw text-white">Enterprise</h4>
+						</div>
+						<div class="card-body">
+							<h1 class="card-title pricing-card-title">$29<small class="text-muted fw-light">/mo</small></h1>
+							<ul class="list-unstyled mt-3 mb-4">
+								<li>Team access (up to 5 members)</li>
+								<li>Custom fabric libraries</li>
+								<li>1-on-1 support</li>
+								<li>Commercial usage rights</li>
+							</ul>
+							<button type="button" class="w-100 btn btn-lg" style="background-color: #d35400; color: white">Contact Sales</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<br />
+		<br />
+
+		<!-- Call-To-Action Section -->
+		<div class="container py-5 border-bottom text-center cta-section" data-aos="fade-up">
+			<div class="row justify-content-center mb-4">
+				<div class="col-lg-8">
+					<h1 class="display-4 fw-bold" style="color: #d35400">Discover Your Perfect Style</h1>
+					<p class="lead mt-3 text-dark">Whether you're looking for stitched elegance or unstitched fabric to tailor your dreams—start your design journey here.</p>
+				</div>
+			</div>
+
+			<div class="row justify-content-center mb-5">
+				<div class="col-auto position-relative">
+					<div class="generate-wrapper">
+						<button type="button" class="btn btn-lg px-5 cta-button main-generate-btn">🎨 Generate Design</button>
+
+						<div class="generate-options d-flex flex-column gap-2">
+							<a href="./login.html" class="btn btn-outline-dark w-100">Generate as Free</a>
+							<a href="./login.html" class="btn btn-outline-dark w-100">Generate as Corporate</a>
+						</div>
+					</div>
+				</div>
+			</div>
+			<br />
+			<div class="row justify-content-center">
+				<div class="col-lg-8 mt-4">
+					<img src="/static/images/fashion design.jpg" class="img-fluid border rounded-3 shadow-lg mb-4 cta-image" alt="Fabric preview image" loading="lazy" />
+				</div>
+			</div>
+		</div>
+
+		<!-- Footer -->
+		<footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
+			<div class="col-md-4 d-flex align-items-center">
+				<span class="text-body-secondary">© 2026 AI Fashion Generator</span>
+			</div>
+			<ul class="nav col-md-4 justify-content-end list-unstyled d-flex">
+				<li class="ms-3">
+					<a class="text-body-primary" href="#"
+						><svg width="24" height="24"><use xlink:href="#instagram"></use></svg
+					></a>
+				</li>
+				<li class="ms-3">
+					<a class="text-body-primary" href="#"
+						><svg width="24" height="24"><use xlink:href="#facebook"></use></svg
+					></a>
+				</li>
+			</ul>
+		</footer>
+
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+		<script>
+			AOS.init({
+				once: true,
+				duration: 1000,
+				offset: 100,
+			});
+		</script>
+	</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body, html {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #eec979, #ACB6E5);
+    }
+
+    .container {
+      background: #fff;
+      padding: 40px 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      width: 320px;
+      text-align: center;
+      z-index: 1;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      font-size: 28px;
+      color: #222;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 14px;
+      line-height: 1.4;
+    }
+
+    .demo-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .demo-row button {
+      flex: 1;
+      padding: 10px 8px;
+      font-size: 13px;
+      background: #fff;
+      color: #E6521F;
+      border: 1px solid #E6521F;
+      border-radius: 8px;
+      cursor: pointer;
+      transform: none;
+    }
+
+    .demo-row button:hover {
+      background: #fff4ee;
+      transform: none;
+    }
+
+    input[type="text"], input[type="password"], select {
+      width: 100%;
+      padding: 12px 14px;
+      margin-bottom: 18px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus {
+      border-color: #5dc99f;
+      outline: none;
+    }
+
+    .error {
+      color: red;
+      font-size: 14px;
+      margin-bottom: 10px;
+      min-height: 1.2em;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      background-color: #E6521F;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .login-btn:hover {
+      transform: scale(1.03);
+    }
+
+    .login-btn:disabled {
+      opacity: 0.7;
+      cursor: wait;
+      transform: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Login</h1>
+    <p class="hint">Click a demo account, then Login</p>
+    <div class="demo-row">
+      <button type="button" onclick="fillDemo('free')">Free account</button>
+      <button type="button" onclick="fillDemo('corporate')">Corporate</button>
+    </div>
+    <div class="error" id="errorMsg"></div>
+    <form id="loginForm" autocomplete="off" onsubmit="event.preventDefault(); login();">
+      <input type="text" id="username" name="username" placeholder="Enter username" autocomplete="off" />
+      <input type="password" id="password" name="password" placeholder="Enter password" autocomplete="new-password" />
+      <select id="userType">
+        <option value="Free">Free</option>
+        <option value="Corporate">Corporate</option>
+      </select>
+      <button type="submit" class="login-btn" id="loginBtn">Login</button>
+    </form>
+  </div>
+
+ <script src="config.js"></script>
+<script>
+    function fillDemo(kind) {
+        const username = document.getElementById("username");
+        const password = document.getElementById("password");
+        const userType = document.getElementById("userType");
+        document.getElementById("errorMsg").textContent = "";
+
+        if (kind === "corporate") {
+            username.value = "corporate";
+            password.value = "corp123";
+            userType.value = "Corporate";
+        } else {
+            username.value = "free";
+            password.value = "free123";
+            userType.value = "Free";
+        }
+    }
+
+    async function login() {
+        const usernameEl = document.getElementById("username");
+        const passwordEl = document.getElementById("password");
+        const userType = document.getElementById("userType").value;
+        const errorDiv = document.getElementById("errorMsg");
+        const loginBtn = document.getElementById("loginBtn");
+
+        // Re-read after a tick so browser autofill values are flushed into .value
+        usernameEl.focus();
+        passwordEl.focus();
+        const username = usernameEl.value.trim();
+        const password = passwordEl.value.trim();
+        errorDiv.textContent = "";
+
+        if (!username || !password) {
+            errorDiv.textContent = "Please enter both username and password (or click Free account / Corporate).";
+            return;
+        }
+
+        loginBtn.disabled = true;
+        loginBtn.textContent = "Logging in...";
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/login/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, userType })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                sessionStorage.setItem("isLoggedIn", "true");
+                sessionStorage.setItem("userTier", data.tier);
+
+                if (data.tier === 'corporate') {
+                    window.location.href = "generate-corporate.html";
+                } else {
+                    window.location.href = "generate-free.html";
+                }
+            } else {
+                throw new Error(data.detail || "Invalid username or password.");
+            }
+        } catch (error) {
+            errorDiv.textContent = `Login failed: ${error.message}`;
+            loginBtn.disabled = false;
+            loginBtn.textContent = "Login";
+        }
+    }
+</script>
+</body>
+</html>

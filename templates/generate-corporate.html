@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Corporate Style Generator</title>
+		<script src="https://cdn.jsdelivr.net/npm/three@0.125.2/build/three.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/three@0.125.2/examples/js/loaders/GLTFLoader.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/three@0.125.2/examples/js/controls/OrbitControls.js"></script>
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+		<style>
+			body {
+				font-family: "Segoe UI", sans-serif;
+				background: #eef7ff;
+			}
+			.btn-generate {
+				background-color: #f1733a;
+				border: none;
+				padding: 10px 20px;
+				border-radius: 10px;
+				color: white;
+				font-weight: 600;
+				font-size: 16px;
+			}
+			.btn-generate:hover {
+				background-color: #e66c33;
+			}
+			.option-buttons .btn {
+				background-color: #f1733a;
+				color: white;
+				margin: 4px;
+				padding: 6px 14px;
+				font-size: 14px;
+				border-radius: 8px;
+				border: none;
+			}
+			.option-buttons .btn.active {
+				background-color: #c3531f;
+			}
+			input {
+				margin-bottom: 15px;
+			}
+			.design-card {
+				border-radius: 12px;
+				box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+				background: white;
+				padding: 20px;
+				margin-top: 20px;
+			}
+			.section-title {
+				font-weight: 600;
+				color: #d34500;
+				margin-top: 40px;
+			}
+			.design-image,
+			.position-absolute {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				border-radius: 10px;
+			}
+			.design-image {
+				object-fit: cover;
+				z-index: 1;
+			}
+			.position-absolute {
+				object-fit: contain;
+				z-index: 2;
+			}
+			.position-relative {
+				width: 100%;
+				aspect-ratio: 1 / 1;
+			}
+			#three-d-viewer-container {
+				width: 100%;
+				height: 420px !important;
+				aspect-ratio: auto !important;
+				overflow: hidden;
+				background-color: #333;
+				border-radius: 10px;
+			}
+			#three-d-viewer-container canvas {
+				width: 100% !important;
+				height: 100% !important;
+				display: block;
+			}
+		</style>
+	</head>
+	<body>
+		<script>
+			const isLoggedIn = sessionStorage.getItem("isLoggedIn");
+			const userTier = sessionStorage.getItem("userTier");
+			if (isLoggedIn !== "true" || userTier !== "corporate") {
+				alert("Access denied. Please log in with a Corporate account.");
+				window.location.href = "login.html";
+			}
+		</script>
+		<div class="container py-5">
+			<h2 class="text-center fw-bold mb-3">Corporate Style Generator</h2>
+
+			<div class="row justify-content-center">
+				<div class="col-md-8">
+					<input type="text" id="styleInput" class="form-control" placeholder="Enter your desired style..." />
+
+					<h6 class="mt-3">Select Material</h6>
+					<div id="materialButtons" class="option-buttons d-flex flex-wrap"></div>
+
+					<h6 class="mt-3">Select Use Case</h6>
+					<div id="useCaseButtons" class="option-buttons d-flex flex-wrap"></div>
+
+					<h6 class="mt-3">Select Model Type</h6>
+					<div id="modelButtons" class="option-buttons d-flex flex-wrap"></div>
+
+					<p class="text-muted small mt-2">Includes access to premium model simulations and extended use cases.</p>
+
+					<button class="btn-generate w-100 mt-3" onclick="generateDesign()">Generate</button>
+				</div>
+			</div>
+
+			<div id="output" class="mt-4 row justify-content-center" style="display: none">
+				<div class="col-md-5 design-card text-center">
+					<h5>Unstitched Version</h5>
+					<div class="position-relative">
+						<img id="unstitchedImage" src="#" alt="Unstitched Design" class="design-image" />
+						<img src="/static/images/neck.png" alt="Neckline" class="position-absolute top-0 start-0 w-100 h-100" style="object-fit: contain" />
+					</div>
+					<p class="mt-2 small text-muted">Image ID: <span id="imageIdDisplay">N/A</span></p>
+				</div>
+
+				<div class="col-md-5 design-card text-center">
+					<h5>Stitched Version</h5>
+					<div class="position-relative">
+						<img id="stitchedImage" src="#" alt="Stitched Design" class="design-image" />
+						<img id="dressOverlay" src="/static/images/dress1.png" alt="Dress Overlay" class="position-absolute top-0 start-0 w-100 h-100" style="object-fit: contain" />
+					</div>
+					<p class="mt-2 small text-muted">Selected Material: <span id="materialDisplay">None</span></p>
+				</div>
+
+				<div class="row justify-content-center mt-4">
+					<div id="threeD-card" class="col-md-10 design-card text-center" style="display: none">
+						<h5>3D Model Preview</h5>
+						<div id="three-d-viewer-container" class="position-relative" style="height: 400px; background-color: #333; border-radius: 10px"></div>
+						<p class="mt-2 small text-muted">Drag to rotate. The generated design is applied onto the model's clothes.</p>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div id="feedbackSection" class="design-card text-start mt-4" style="display: none">
+			<h4 class="section-title">Submit Feedback</h4>
+			<p class="text-muted small">Your feedback helps improve our models. (Pattern ID: <strong id="feedbackPatternId">N/A</strong>)</p>
+
+			<div class="mb-3">
+				<label for="rating" class="form-label">Rating (1-5):</label>
+				<input type="number" id="rating" class="form-control" min="1" max="5" value="5" />
+			</div>
+
+			<div class="mb-3">
+				<label for="comment" class="form-label">Comment:</label>
+				<textarea id="comment" class="form-control" rows="3" placeholder="What did you like or dislike?"></textarea>
+			</div>
+
+			<button class="btn-generate" onclick="handleSubmitFeedback()">Submit Feedback</button>
+			<div id="feedbackMessage" class="alert mt-3" style="display: none"></div>
+		</div>
+
+		<script src="config.js"></script>
+		<script>
+			let currentImageBlobUrl = null;
+
+			const materials = ["Cotton", "Lawn", "Chiffon", "Silk", "Linen"];
+			const useCases = ["Dress 1", "Dress 2", "Dress 3", "Dress 4", "Dress 5", "Dress 6", "Dress 7", "Dress 8", "Dress 9", "Dress 10"];
+
+			function createButtons(containerId, options, onClickHandler) {
+				const container = document.getElementById(containerId);
+				container.innerHTML = "";
+				options.forEach((option, index) => {
+					const btn = document.createElement("button");
+					btn.className = "btn";
+					btn.textContent = option;
+					btn.onclick = (event) => {
+						Array.from(event.target.parentElement.children).forEach((b) => b.classList.remove("active"));
+						event.target.classList.add("active");
+						if (onClickHandler) onClickHandler(option, index + 1);
+					};
+					container.appendChild(btn);
+				});
+			}
+
+			createButtons("materialButtons", materials, (material) => applyMaterialFilter(material));
+			createButtons("useCaseButtons", useCases, (useCase, index) => applyDressOverlay(index));
+
+			const corporateModels = {
+				SDXL: "SDXL Pattern Model",
+				SD21: "SD 2.1 Standard Model",
+				Photoreal: "Photorealistic Studio Model",
+			};
+
+			const modelButtonsContainer = document.getElementById("modelButtons");
+			for (const modelKey in corporateModels) {
+				const btn = document.createElement("button");
+				btn.className = "btn";
+				btn.textContent = corporateModels[modelKey];
+				btn.setAttribute("data-model-key", modelKey);
+
+				btn.onclick = (event) => {
+					Array.from(event.target.parentElement.children).forEach((b) => b.classList.remove("active"));
+					event.target.classList.add("active");
+				};
+				modelButtonsContainer.appendChild(btn);
+			}
+
+			function applyMaterialFilter(material) {
+				const filterStyles = {
+					Cotton: "brightness(1.05) contrast(1.05)",
+					Satin: "saturate(1.3) contrast(1.2)",
+					Silk: "brightness(1.1) saturate(1.15)",
+					Chiffon: "opacity(0.9) blur(0.3px)",
+					Linen: "grayscale(0.05) contrast(1.1)",
+				};
+				const filter = filterStyles[material] || "none";
+				document.getElementById("unstitchedImage").style.filter = filter;
+				document.getElementById("stitchedImage").style.filter = filter;
+				document.getElementById("materialDisplay").textContent = material;
+			}
+
+			function applyDressOverlay(index) {
+				document.getElementById("dressOverlay").src = `/static/images/dress${index}.png`;
+			}
+
+			function getSelectedValue(groupId) {
+				const selectedBtn = document.querySelector(`#${groupId} .btn.active`);
+				return selectedBtn ? selectedBtn.textContent : "";
+			}
+
+			function getSelectedModelKey() {
+				const selectedBtn = document.querySelector(`#modelButtons .btn.active`);
+				return selectedBtn ? selectedBtn.getAttribute("data-model-key") : "";
+			}
+
+			async function generateDesign() {
+				const style = document.getElementById("styleInput").value.trim();
+				const material = getSelectedValue("materialButtons");
+				const useCase = getSelectedValue("useCaseButtons");
+				const modelKey = getSelectedModelKey();
+
+				if (!style || !material || !useCase || !modelKey) {
+					alert("Please complete all selections, including Model Type.");
+					return;
+				}
+
+				const outputDiv = document.getElementById("output");
+				const generateBtn = document.querySelector(".btn-generate");
+
+				generateBtn.disabled = true;
+				generateBtn.textContent = "Generating...";
+				outputDiv.style.display = "none";
+				document.getElementById("feedbackSection").style.display = "none";
+
+				try {
+					const fullPrompt = `${style}, ${material} fabric, seamless pattern, for a ${useCase}`;
+
+					const response = await fetch(`${API_BASE_URL}/generate-pattern/`, {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							prompt: fullPrompt,
+							model_name: modelKey,
+						}),
+					});
+
+					if (!response.ok) {
+						const errorData = await response.json();
+						throw new Error(errorData.detail || "Server returned an error.");
+					}
+
+					const imageBlob = await response.blob();
+					if (currentImageBlobUrl) URL.revokeObjectURL(currentImageBlobUrl);
+					currentImageBlobUrl = URL.createObjectURL(imageBlob);
+
+					if (window.updateModelTexture) {
+						window.updateModelTexture(currentImageBlobUrl);
+					}
+
+					document.getElementById("unstitchedImage").src = currentImageBlobUrl;
+					document.getElementById("stitchedImage").src = currentImageBlobUrl;
+					document.getElementById("threeD-card").style.display = "block";
+
+					let imageId = response.headers.get("X-Image-ID");
+					if (!imageId) {
+						imageId = createIdFromPrompt(fullPrompt);
+					}
+					document.getElementById("imageIdDisplay").textContent = imageId;
+
+					applyMaterialFilter(material);
+					const useCaseIndex = useCases.indexOf(useCase) + 1;
+					applyDressOverlay(useCaseIndex);
+
+					const feedbackSection = document.getElementById("feedbackSection");
+					document.getElementById("feedbackPatternId").textContent = imageId;
+					document.getElementById("rating").value = 5;
+					document.getElementById("comment").value = "";
+					document.getElementById("feedbackMessage").style.display = "none";
+
+					outputDiv.style.display = "flex";
+					feedbackSection.style.display = "block";
+
+					if (window.force3DViewerResize) {
+						window.force3DViewerResize();
+					}
+				} catch (error) {
+					alert(`Generation Failed: ${error.message}`);
+				} finally {
+					generateBtn.disabled = false;
+					generateBtn.textContent = "Generate";
+				}
+			}
+
+			async function handleSubmitFeedback() {
+				const imageId = document.getElementById("imageIdDisplay").textContent;
+				const rating = document.getElementById("rating").value;
+				const comment = document.getElementById("comment").value.trim();
+				const feedbackMessage = document.getElementById("feedbackMessage");
+
+				if (imageId === "N/A" || !imageId) {
+					alert("Cannot submit feedback without a valid Pattern ID.");
+					return;
+				}
+				if (!rating || !comment) {
+					alert("Please provide both a rating and a comment.");
+					return;
+				}
+
+				feedbackMessage.style.display = "block";
+				feedbackMessage.className = "alert alert-info";
+				feedbackMessage.textContent = "Submitting feedback...";
+
+				try {
+					const response = await fetch(`${API_BASE_URL}/submit-feedback/`, {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ pattern_id: imageId, rating: parseInt(rating), comment: comment }),
+					});
+
+					const data = await response.json();
+					if (response.ok) {
+						feedbackMessage.className = "alert alert-success";
+						feedbackMessage.textContent = data.message || "Feedback submitted successfully!";
+					} else {
+						throw new Error(data.detail || "Failed to submit feedback.");
+					}
+				} catch (error) {
+					feedbackMessage.className = "alert alert-danger";
+					feedbackMessage.textContent = `Error: ${error.message}`;
+				}
+			}
+
+			function createIdFromPrompt(prompt) {
+				const sanitized = prompt
+					.toLowerCase()
+					.replace(/[^a-z0-9\s]/g, "")
+					.replace(/\s+/g, "-");
+				const promptPart = sanitized.split("-").slice(0, 4).join("-");
+				const timestamp = Date.now().toString().slice(-6);
+
+				return `${promptPart}-${timestamp}`;
+			}
+		</script>
+
+		<script>
+			(function () {
+				const viewerContainer = document.getElementById("three-d-viewer-container");
+				if (!viewerContainer || typeof THREE === "undefined") {
+					console.error("3D viewer container or Three.js missing");
+					return;
+				}
+
+				let characterModel = null;
+				let pendingTextureUrl = null;
+				let clothingMeshes = [];
+				let bodyMeshes = [];
+
+				const CLOTH_UV = { u0: 0.415, u1: 0.999, v0: 0.251, v1: 0.739 };
+
+				const statusEl = document.createElement("div");
+				statusEl.id = "three-d-status";
+				statusEl.style.cssText = "position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;pointer-events:none;z-index:2;";
+				statusEl.textContent = "Loading 3D model...";
+				viewerContainer.appendChild(statusEl);
+
+				const scene = new THREE.Scene();
+				scene.background = new THREE.Color(0x333333);
+
+				const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 5000);
+				camera.position.set(0, 1.4, 3.2);
+
+				const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+				renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+				renderer.domElement.style.display = "block";
+				renderer.domElement.style.width = "100%";
+				renderer.domElement.style.height = "100%";
+				viewerContainer.appendChild(renderer.domElement);
+
+				const controls = new THREE.OrbitControls(camera, renderer.domElement);
+				controls.target.set(0, 1.1, 0);
+				controls.enableDamping = true;
+				controls.minDistance = 1.2;
+				controls.maxDistance = 8;
+
+				scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+				const keyLight = new THREE.DirectionalLight(0xffffff, 1.1);
+				keyLight.position.set(3, 6, 4);
+				scene.add(keyLight);
+				const fillLight = new THREE.DirectionalLight(0xffffff, 0.55);
+				fillLight.position.set(-3, 2, -2);
+				scene.add(fillLight);
+
+				function resizeViewer() {
+					const width = viewerContainer.clientWidth || viewerContainer.offsetWidth;
+					const height = viewerContainer.clientHeight || viewerContainer.offsetHeight || 400;
+					if (width < 2 || height < 2) return;
+					camera.aspect = width / height;
+					camera.updateProjectionMatrix();
+					renderer.setSize(width, height, false);
+				}
+
+				function frameModel(object) {
+					const box = new THREE.Box3().setFromObject(object);
+					const size = box.getSize(new THREE.Vector3());
+					const center = box.getCenter(new THREE.Vector3());
+					object.position.sub(center);
+					const maxDim = Math.max(size.x, size.y, size.z) || 1;
+					const distance = maxDim * 2.2;
+					camera.near = Math.max(0.01, distance / 100);
+					camera.far = distance * 20;
+					camera.position.set(0, size.y * 0.12, distance);
+					controls.target.set(0, 0, 0);
+					controls.minDistance = maxDim * 0.6;
+					controls.maxDistance = maxDim * 8;
+					controls.update();
+					camera.updateProjectionMatrix();
+				}
+
+				function resizeAndRender() {
+					resizeViewer();
+					renderer.render(scene, camera);
+				}
+
+				window.force3DViewerResize = function () {
+					requestAnimationFrame(function () {
+						resizeAndRender();
+						requestAnimationFrame(resizeAndRender);
+					});
+				};
+
+				function loadImage(src) {
+					return new Promise(function (resolve, reject) {
+						const img = new Image();
+						img.onload = function () {
+							resolve(img);
+						};
+						img.onerror = reject;
+						img.src = src;
+					});
+				}
+
+				function makeTextureFromCanvas(canvas) {
+					const tex = new THREE.CanvasTexture(canvas);
+					tex.flipY = false;
+					tex.needsUpdate = true;
+					if (THREE.sRGBEncoding !== undefined) tex.encoding = THREE.sRGBEncoding;
+					return tex;
+				}
+
+				function applyMapToMesh(mesh, texture, opts) {
+					opts = opts || {};
+					const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+					const next = materials.map(function (mat) {
+						const cloned = mat.clone();
+						if (cloned.map) cloned.map.dispose();
+						cloned.map = texture;
+						cloned.color = new THREE.Color(0xffffff);
+						cloned.transparent = !!opts.transparent;
+						cloned.alphaTest = opts.alphaTest || 0;
+						cloned.side = THREE.DoubleSide;
+						cloned.metalness = 0.05;
+						cloned.roughness = 0.75;
+						cloned.needsUpdate = true;
+						return cloned;
+					});
+					mesh.material = next.length === 1 ? next[0] : next;
+				}
+
+				function buildClothedAtlas(baseImg, patternImg, size) {
+					size = size || 2048;
+					const canvas = document.createElement("canvas");
+					canvas.width = size;
+					canvas.height = size;
+					const ctx = canvas.getContext("2d");
+
+					ctx.drawImage(baseImg, 0, 0, size, size);
+
+					const patternCanvas = document.createElement("canvas");
+					patternCanvas.width = size;
+					patternCanvas.height = size;
+					const pctx = patternCanvas.getContext("2d");
+					const tile = Math.max(256, Math.floor(size / 3));
+					for (let y = 0; y < size; y += tile) {
+						for (let x = 0; x < size; x += tile) {
+							pctx.drawImage(patternImg, x, y, tile, tile);
+						}
+					}
+
+					const baseData = ctx.getImageData(0, 0, size, size);
+					const patData = pctx.getImageData(0, 0, size, size);
+					const bd = baseData.data;
+					const pd = patData.data;
+					for (let i = 0; i < bd.length; i += 4) {
+						if (bd[i + 3] < 200) {
+							bd[i] = pd[i];
+							bd[i + 1] = pd[i + 1];
+							bd[i + 2] = pd[i + 2];
+							bd[i + 3] = 255;
+						}
+					}
+					ctx.putImageData(baseData, 0, 0);
+					return canvas;
+				}
+
+				function buildOutfitTexture(patternImg, size) {
+					size = size || 1024;
+					const canvas = document.createElement("canvas");
+					canvas.width = size;
+					canvas.height = size;
+					const ctx = canvas.getContext("2d");
+					ctx.fillStyle = "#ffffff";
+					ctx.fillRect(0, 0, size, size);
+
+					const u0 = CLOTH_UV.u0,
+						u1 = CLOTH_UV.u1,
+						v0 = CLOTH_UV.v0,
+						v1 = CLOTH_UV.v1;
+					const x = Math.floor(u0 * size);
+					const y = Math.floor(v0 * size);
+					const w = Math.max(1, Math.floor((u1 - u0) * size));
+					const h = Math.max(1, Math.floor((v1 - v0) * size));
+
+					const tile = 256;
+					for (let py = 0; py < size; py += tile) {
+						for (let px = 0; px < size; px += tile) {
+							ctx.drawImage(patternImg, px, py, tile, tile);
+						}
+					}
+					ctx.drawImage(patternImg, x, y, w, h);
+					return canvas;
+				}
+
+				async function applyGeneratedClothes(patternUrl) {
+					const [baseImg, patternImg] = await Promise.all([loadImage("/static/images/grpp.png"), loadImage(patternUrl)]);
+
+					const atlasCanvas = buildClothedAtlas(baseImg, patternImg, 2048);
+					const outfitCanvas = buildOutfitTexture(patternImg, 1024);
+					const atlasTex = makeTextureFromCanvas(atlasCanvas);
+					const outfitTex = makeTextureFromCanvas(outfitCanvas);
+
+					bodyMeshes.forEach(function (mesh) {
+						applyMapToMesh(mesh, atlasTex, { transparent: false });
+					});
+					clothingMeshes.forEach(function (mesh) {
+						applyMapToMesh(mesh, outfitTex, { transparent: false });
+					});
+
+					window.force3DViewerResize();
+				}
+
+				function updateModelTexture(generatedPatternUrl) {
+					if (!characterModel) {
+						pendingTextureUrl = generatedPatternUrl;
+						return;
+					}
+					applyGeneratedClothes(generatedPatternUrl).catch(function (err) {
+						console.error("Failed to apply clothes texture:", err);
+					});
+				}
+
+				window.updateModelTexture = updateModelTexture;
+
+				const loader = new THREE.GLTFLoader();
+				loader.load(
+					"/static/models/Anime_character.glb",
+					function (gltf) {
+						characterModel = gltf.scene;
+						clothingMeshes = [];
+						bodyMeshes = [];
+
+						characterModel.traverse(function (node) {
+							if (!node.isMesh) return;
+							const name = (node.name || "").toLowerCase();
+							const parentName = ((node.parent && node.parent.name) || "").toLowerCase();
+							const label = name + " " + parentName;
+
+							if (label.indexOf("cube") !== -1) {
+								node.visible = false;
+								return;
+							}
+
+							if (Array.isArray(node.material)) {
+								node.material = node.material.map(function (m) {
+									return m.clone();
+								});
+							} else if (node.material) {
+								node.material = node.material.clone();
+							}
+
+							if (label.indexOf("traje") !== -1) {
+								clothingMeshes.push(node);
+							} else {
+								bodyMeshes.push(node);
+							}
+						});
+
+						const tempBox = new THREE.Box3().setFromObject(characterModel);
+						const tempSize = tempBox.getSize(new THREE.Vector3());
+						const longest = Math.max(tempSize.x, tempSize.y, tempSize.z) || 1;
+						characterModel.scale.setScalar(2.2 / longest);
+
+						scene.add(characterModel);
+						frameModel(characterModel);
+						statusEl.style.display = "none";
+						resizeAndRender();
+
+						loadImage("/static/images/grpp.png")
+							.then(function (baseImg) {
+								const canvas = document.createElement("canvas");
+								canvas.width = 1024;
+								canvas.height = 1024;
+								const ctx = canvas.getContext("2d");
+								ctx.drawImage(baseImg, 0, 0, 1024, 1024);
+								const tex = makeTextureFromCanvas(canvas);
+								bodyMeshes.forEach(function (mesh) {
+									applyMapToMesh(mesh, tex);
+								});
+								clothingMeshes.forEach(function (mesh) {
+									applyMapToMesh(mesh, tex);
+								});
+								resizeAndRender();
+							})
+							.catch(function () {});
+
+						if (pendingTextureUrl) {
+							updateModelTexture(pendingTextureUrl);
+							pendingTextureUrl = null;
+						}
+					},
+					undefined,
+					function (error) {
+						console.error("Failed to load 3D model:", error);
+						statusEl.textContent = "Failed to load 3D model. Refresh and try again.";
+					},
+				);
+
+				function animate() {
+					requestAnimationFrame(animate);
+					controls.update();
+					renderer.render(scene, camera);
+				}
+				animate();
+
+				window.addEventListener("resize", resizeViewer);
+			})();
+		</script>
+	</body>
+</html>
